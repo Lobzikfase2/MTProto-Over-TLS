@@ -115,23 +115,23 @@ configure_ufw() {
 # Настраиваем ядро
 configure_sysctl() {
   log "Конфигурация ядра"
-  # net.ipv4.tcp_timestamps -- Спорно  
-  # 0 - дает меньше данных для анализа 
-  # 1 - делает больше похожим на https
-  # Чат джпт настаивает не выключать
-  sudo bash -c 'cat > /etc/sysctl.d/99-tuning.conf <<EOF
-  net.ipv4.tcp_fastopen = 0
-  net.ipv4.tcp_timestamps = 1
-  net.ipv4.tcp_congestion_control = bbr
-  net.core.default_qdisc = fq
-  net.core.somaxconn = 4096
-  net.core.netdev_max_backlog = 16384
-  net.ipv4.tcp_mtu_probing = 1
-  net.ipv4.tcp_rfc1337 = 1
-  net.ipv4.conf.all.rp_filter = 1
-  net.ipv4.ip_unprivileged_port_start = 443
-  EOF
-  sysctl --system'
+  sudo tee /etc/sysctl.d/99-tuning.conf > /dev/null <<EOF
+net.ipv4.tcp_fastopen = 0
+# net.ipv4.tcp_timestamps -- Спорно
+# 0 - дает меньше данных для анализа
+# 1 - делает больше похожим на https
+# GPT настаивает не выключать
+net.ipv4.tcp_timestamps = 1
+net.ipv4.tcp_congestion_control = bbr
+net.core.default_qdisc = fq
+net.core.somaxconn = 4096
+net.core.netdev_max_backlog = 16384
+net.ipv4.tcp_mtu_probing = 1
+net.ipv4.tcp_rfc1337 = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.ip_unprivileged_port_start = 443
+EOF
+  sudo sysctl --system
 }
 
 install_components() {
