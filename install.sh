@@ -99,6 +99,7 @@ check_docker() {
 
 # Настраиваем ufw
 configure_ufw() {
+    log "Настройка UFW"
     ssh_port=$(awk '/^Port / {print $2}' /etc/ssh/sshd_config)
     sudo ufw --force disable
     sudo ufw --force reset
@@ -113,9 +114,13 @@ configure_ufw() {
 
 # Настраиваем ядро
 configure_sysctl() {
+  log "Конфигурация ядра"
+  # net.ipv4.tcp_timestamps -- Спорно  
+  # 0 - дает меньше данных для анализа 
+  # 1 - делает больше похожим на https
+  # Чат джпт настаивает не выключать
   sudo bash -c 'cat > /etc/sysctl.d/99-tuning.conf <<EOF
   net.ipv4.tcp_fastopen = 0
-  # Спорно 0 - дает меньше данных для анализа, но 1 - делает больше похожим на https. Чат джпт настаивает не выключать
   net.ipv4.tcp_timestamps = 1
   net.ipv4.tcp_congestion_control = bbr
   net.core.default_qdisc = fq
@@ -147,11 +152,6 @@ install_components() {
     fi
     check_docker
     echo "Установка всех необходимых компонентов успешно завершена"
-
-    echo "Настройка ufw..."
-    configure_ufw
-    echo "Настройка sysctl..."
-    configure_sysctl
 }
 
 configure_telemt() {
@@ -279,6 +279,8 @@ main() {
     fi
 
     install_components
+    configure_ufw
+    configure_sysctl
 
     log "Клонирование репозитория"
     mkdir -p $USER_HOME/mtp_proxy && cd $USER_HOME/mtp_proxy
@@ -291,7 +293,6 @@ main() {
     fi
 
     cd $USER_HOME/mtp_proxy && rm -rf ./mtp && sudo chown -R $USER_NAME:$USER_NAME *
-
 
     start_telemt
     show_proxy_link
