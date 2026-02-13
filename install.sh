@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Функция для получения информации о пользователе, который запустил скрипт
 set_user_info() {
     if [ -n "$SUDO_USER" ]; then
@@ -12,6 +14,7 @@ set_user_info() {
         USER_HOME="$HOME"
     fi
 }
+set_user_info
 
 log() {
     local text="$1"
@@ -131,8 +134,8 @@ install_components() {
     sudo apt update
     sudo apt install -y git
 
-    # Устанавливаем nginx и certbot только для режима reality
-    if [[ $MODE == "reality" ]]; then
+    # Устанавливаем nginx и certbot только для режима vision
+    if [[ $MODE == "vision" ]]; then
         echo "Установка nginx и certbot..."
         sudo apt install -y nginx-full certbot python3-certbot-nginx
     fi
@@ -162,6 +165,7 @@ configure_telemt() {
     sed -i "s/__DOMAIN__/$DOMAIN/g" ./telemt.toml
     sed -i "s/__MASK_PORT__/$MASK_PORT/g" ./telemt.toml
     sed -i "s/__SECRET__/$SECRET/g" ./telemt.toml
+    mv ./telemt.toml ../
 }
 
 start_telemt() {
@@ -176,7 +180,7 @@ start_telemt() {
       --log-driver json-file \
       --log-opt max-size=50m \
       --log-opt max-file=3 \
-      -v $USER_HOME/mtproxy-telemt/telemt.toml:/etc/telemt.toml:ro \
+      -v $USER_HOME/mtp_proxy/telemt.toml:/etc/telemt.toml:ro \
       whn0thacked/telemt-docker:latest
     sleep 3
 }
@@ -201,7 +205,7 @@ configure_and_start_nginx() {
 
     rm ./dummy_site/main_raw.js
     sudo mkdir -p /var/www/dummy
-    sudo mv -r ./dummy_site/* /var/www/dummy
+    sudo mv ./dummy_site/* /var/www/dummy
 
     sudo mv ./nginx_before_certbot.conf /etc/nginx/nginx.conf
     sudo systemctl restart nginx
