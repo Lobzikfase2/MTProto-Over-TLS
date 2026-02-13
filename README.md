@@ -6,5 +6,5 @@
 ## 🚀 Установка
 
 ```bash
-sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/Lobzikfase2/MTProto-Over-TLS/main/install.sh)"
+sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/Lobzikfase2/MTProto-Over-TLS/refs/heads/main/install.sh)"
 ```
