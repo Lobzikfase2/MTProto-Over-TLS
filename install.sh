@@ -1,20 +1,26 @@
 #!/bin/bash
 
 log() {
-    local text="${1^^}"
+    local text="$1"
     local char="${2:-=}"
-    local width=80  # фиксированная ширина
+    local width=80
 
-    local text_part=" $text "
-    local text_len=${#text_part}
-    local symbols=$((width - text_len))
-    local left=$((symbols / 2))
-    local right=$((symbols - left))
+    if [[ -z "${text// }" ]]; then  # проверяем, что текст пустой или состоит только из пробелов
+        printf '%*s' $width '' | tr ' ' "$char"
+        echo
+    else
+        text=$(echo "$text" | tr '[:lower:]' '[:upper:]')
+        local text_part=" $text "
+        local text_len=${#text_part}
+        local symbols=$((width - text_len))
+        local left=$((symbols / 2))
+        local right=$((symbols - left))
 
-    printf '%*s' $left '' | tr ' ' "$char"
-    echo -n "$text_part"
-    printf '%*s' $right '' | tr ' ' "$char"
-    echo
+        printf '%*s' $left '' | tr ' ' "$char"
+        echo -n "$text_part"
+        printf '%*s' $right '' | tr ' ' "$char"
+        echo
+    fi
 }
 
 # Функция для очистки предыдущих установок Docker
