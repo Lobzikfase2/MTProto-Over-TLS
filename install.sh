@@ -251,7 +251,7 @@ main() {
     log ""
     echo "Режим установки: $MODE"
     echo "Домен: $DOMAIN"
-    log "========================================"
+    log ""
     echo ""
     read -p "Все верно? Продолжить установку? (y/n): " confirm
     if [[ $confirm != "y" && $confirm != "Y" ]]; then
