@@ -123,9 +123,10 @@ configure_sysctl() {
       echo "ℹ️ /etc/sysctl.conf не найден, пропускаю создание бэкапа"
   fi
   sudo tee /etc/sysctl.d/99-tuning.conf > /dev/null <<EOF
+# Производительность/TLS стандарт
 net.ipv4.tcp_timestamps = 1
 net.ipv4.tcp_fastopen = 1
-net.ipv4.tcp_rfc1337 = 0
+net.ipv4.tcp_syncookies = 1
 
 # Производительность
 net.ipv4.tcp_congestion_control = bbr
@@ -146,7 +147,7 @@ net.ipv4.udp_rmem_min = 8192
 net.ipv4.udp_wmem_min = 8192
 
 net.ipv4.conf.all.rp_filter = 1
-net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_rfc1337 = 0
 
 # Нужно лишь для telemt
 net.ipv4.ip_unprivileged_port_start = 443
