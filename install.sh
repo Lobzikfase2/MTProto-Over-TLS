@@ -300,8 +300,8 @@ main() {
     fi
 
     install_components
-    configure_ufw
-    configure_sysctl
+    # configure_ufw
+    # configure_sysctl
 
     log "Клонирование репозитория"
     rm -rf $USER_HOME/mtp_proxy && mkdir -p $USER_HOME/mtp_proxy && cd $USER_HOME/mtp_proxy
