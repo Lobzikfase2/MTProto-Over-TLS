@@ -175,17 +175,84 @@ install_components() {
     echo "Установка всех необходимых компонентов успешно завершена"
 }
 
+check_ipv6_preference() {
+    log "Checking IPv4 vs IPv6 connectivity..."
+
+    IPV4="1.1.1.1"
+    IPV6="2606:4700:4700::1111"
+    PORT=443
+    ATTEMPTS=5
+
+    sum4=0
+    sum6=0
+    ok6=1
+
+    for i in $(seq 1 $ATTEMPTS); do
+        t4=$( (time timeout 3 bash -c "</dev/tcp/$IPV4/$PORT") 2>&1 | grep real | awk '{print $2}' )
+        t4=${t4#0m}; t4=${t4%s}
+
+        t6=$( (time timeout 3 bash -c "</dev/tcp/[$IPV6]/$PORT") 2>&1 | grep real | awk '{print $2}' )
+        t6=${t6#0m}; t6=${t6%s}
+
+        if [[ -z "$t6" ]]; then
+            ok6=0
+        fi
+
+        sum4=$(awk -v a="$sum4" -v b="$t4" 'BEGIN {printf "%.5f", a + b}')
+        sum6=$(awk -v a="$sum6" -v b="$t6" 'BEGIN {printf "%.5f", a + b}')
+    done
+
+    avg4=$(awk -v s="$sum4" -v n="$ATTEMPTS" 'BEGIN {printf "%.5f", s/n}')
+    avg6=$(awk -v s="$sum6" -v n="$ATTEMPTS" 'BEGIN {printf "%.5f", s/n}')
+
+    echo "IPv4 avg: $avg4 s"
+    echo "IPv6 avg: $avg6 s"
+
+    if [[ $ok6 -eq 0 ]]; then
+        echo "IPv6 unavailable → prefer_ipv6=false"
+        return 1
+    fi
+
+    faster=$(awk -v v4="$avg4" -v v6="$avg6" 'BEGIN {print (v6 < v4)}')
+
+    if [[ "$faster" -eq 1 ]]; then
+        echo "IPv6 faster → prefer_ipv6=true"
+        return 0
+    else
+        echo "IPv4 faster or similar → prefer_ipv6=false"
+        return 1
+    fi
+}
+
+# Локальная сборка на основе последнего релиза telemt: https://github.com/telemt/telemt -- смотрим номер версии
+# git clone https://github.com/An0nX/telemt-docker.git && cd telemt-docker
+# docker build  --build-arg TELEMT_REF=3.0.0 -t lobzikfase2/telemt:latest
+# docker push lobzikfase2/telemt:latest
+
+# TODO: Попробовать собрать оригинальный telemt с новым конфигом -- завтра, а то вдруг опять обнову выпустят
+# TODO: Выпустить финальный скрипт
+
 configure_telemt() {
     log "Настройка telemt"
+
     if [[ $MODE == "reality" ]]; then
         MASK_PORT=443
     else
         MASK_PORT=8443
     fi
+
+    # ---- IPv6 auto detection ----
+    if check_ipv6_preference; then
+        PREFER_IP=6
+    else
+        PREFER_IP=4
+    fi
+
     SECRET="$(openssl rand -hex 16)"
     sed -i "s/__DOMAIN__/$DOMAIN/g" ./telemt.toml
     sed -i "s/__MASK_PORT__/$MASK_PORT/g" ./telemt.toml
     sed -i "s/__SECRET__/$SECRET/g" ./telemt.toml
+    sed -i "s/__PREFER_IP__/$PREFER_IPV6/g" ./telemt.toml
     mv ./telemt.toml ../
 }
 
@@ -202,7 +269,7 @@ start_telemt() {
       --log-opt max-size=50m \
       --log-opt max-file=3 \
       -v $USER_HOME/mtp_proxy/telemt.toml:/etc/telemt.toml:ro \
-      whn0thacked/telemt-docker:latest
+      lobzikfase2/telemt:latest
     sleep 3
 }
 
@@ -300,8 +367,8 @@ main() {
     fi
 
     install_components
-    # configure_ufw
-    # configure_sysctl
+    configure_ufw
+    configure_sysctl
 
     log "Клонирование репозитория"
     rm -rf $USER_HOME/mtp_proxy && mkdir -p $USER_HOME/mtp_proxy && cd $USER_HOME/mtp_proxy
