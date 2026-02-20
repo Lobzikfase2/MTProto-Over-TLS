@@ -8,3 +8,11 @@
 ```bash
 sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/Lobzikfase2/MTProto-Over-TLS/refs/heads/main/install.sh)"
 ```
+
+---
+
+## 🔄 Обновление
+
+```bash
+sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/Lobzikfase2/MTProto-Over-TLS/refs/heads/main/update.sh)"
+```
