@@ -214,7 +214,7 @@ show_proxy_link() {
 
 
 DEFAULT_DOMAIN="geogame.play.dart-inter.net"
-DEFAULT_TELEMT_VERSION="3.0.6"
+DEFAULT_TELEMT_VERSION="3.0.8"
 
 # Локальная сборка на основе последнего релиза telemt: https://github.com/telemt/telemt -- смотрим номер версии
 _build_and_push_not_for_use() {
