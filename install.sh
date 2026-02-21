@@ -6,7 +6,7 @@ set -euo pipefail
 # Функция сбора параметров установки
 get_installation_params() {
    # 1. Выбор режима
-    echo "Выберите режим установки:"
+    echo "Выберите режим маскировки:"
     echo "1) Vision"
     echo "2) Reality"
     read -p "Введите 1 или 2: " mode_choice
@@ -16,10 +16,29 @@ get_installation_params() {
         *) echo "Неверный выбор. Выход."; exit 1 ;;
     esac
 
-    # 2. Использовать IP или домен в ссылке
-    read -p "Использовать IP в ссылке или домен? (ip/domain): " addr_type
+    # 2. Выбор режима работы Telemt (Direct-DC / Middle-End)
+    echo "Выберите режим подключения Telemt:"
+    echo "1) Direct-DC (прямое подключение к дата-центрам Telegram)"
+    echo "2) Middle-End (подключение через промежуточные сервера)"
+    read -p "Введите 1 или 2: " conn_mode_choice
+    case $conn_mode_choice in
+        1) CONN_MODE="direct" ;;
+        2) CONN_MODE="me" ;;
+        *) echo "Неверный выбор. Выход."; exit 1 ;;
+    esac
 
-    # 3. Если в ссылке домен ИЛИ режим Vision → запрашиваем домен по частям
+    # 3. Использовать домен или IP в ссылке
+    echo "Что использовать в ссылке для подключения?"
+    echo "1) Домен"
+    echo "2) IP-адрес"
+    read -p "Введите 1 или 2: " addr_choice
+    case $addr_choice in
+        1) addr_type="domain" ;;
+        2) addr_type="ip" ;;
+        *) echo "Неверный выбор. Выход."; exit 1 ;;
+    esac
+
+    # 4. Если в ссылке домен или режим Vision → запрашиваем домен по частям
     if [[ $addr_type == "domain" || $MODE == "vision" ]]; then
         read -p "Использовать домен по умолчанию ($DEFAULT_DOMAIN)? (y/n): " use_default
         if [[ $use_default == "y" || $use_default == "Y" ]]; then
@@ -31,14 +50,14 @@ get_installation_params() {
         DOMAIN="${subdomain}.${base_domain}"
     fi
 
-    # 4. Определяем PUBLIC_HOST (то, что пойдёт в ссылку)
+    # 5. Определяем PUBLIC_HOST (то, что пойдёт в ссылку)
     if [[ $addr_type == "domain" ]]; then
         PUBLIC_HOST="$DOMAIN"
     else
         PUBLIC_HOST=$(curl -s4 ident.me || curl -s4 ifconfig.me || curl -s4 icanhazip.com)
     fi
 
-    # 5. Настройки в зависимости от режима
+    # 6. Настройки в зависимости от режима
     if [[ $MODE == "vision" ]]; then
         TLS_DOMAIN="$DOMAIN"
         MASK_HOST="127.0.0.1"
@@ -50,17 +69,18 @@ get_installation_params() {
         MASK_PORT="443"
     fi
 
-    # 6. Версия Telemt
+    # 7. Версия Telemt
     read -p "Введите версию Telemt (по умолчанию $DEFAULT_TELEMT_VERSION): " TELEMT_VERSION
     TELEMT_VERSION=${TELEMT_VERSION:-$DEFAULT_TELEMT_VERSION}
 
-    # 7. Генерация секрета
+    # 8. Генерация секрета
     SECRET=$(openssl rand -hex 16)
 
-    # 8. Вывод итогов и подтверждение
+    # 9. Вывод итогов и подтверждение
     echo ""
     log ""
-    echo "Режим: $MODE"
+    echo "Режим маскировки: $MODE"
+    echo "Режим подключения: $CONN_MODE"
     echo "Версия Telemt: $TELEMT_VERSION"
     echo "Публичный адрес (в ссылке): $PUBLIC_HOST"
     echo "SNI: $TLS_DOMAIN"
@@ -128,6 +148,16 @@ configure_telemt() {
       -e "s/__PUBLIC_HOST__/$PUBLIC_HOST/g" \
       -e "s/__SECRET__/$SECRET/g" \
        ./telemt_$TELEMT_VERSION.toml
+
+    if [[ $CONN_MODE == "direct" ]]; then
+        log "Активация режима Direct-DC"
+        # Отключение middle proxy
+        sed -i 's/use_middle_proxy = true/use_middle_proxy = false/' ./telemt_$TELEMT_VERSION.toml
+        # Раскомментировать секцию [dc_overrides] и адрес dc внутри
+        sed -i 's/^# \[dc_overrides\]/[dc_overrides]/' ./telemt_$TELEMT_VERSION.toml
+        sed -i '/^# "203" =/ s/^# //' ./telemt_$TELEMT_VERSION.toml
+    fi
+
     mv ./telemt_$TELEMT_VERSION.toml ../
 }
 
