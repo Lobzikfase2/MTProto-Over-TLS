@@ -3,6 +3,7 @@ fast_mode = true
 use_middle_proxy = false
 log_level = "normal"
 disable_colors = true
+beobachten = false
 
 [general.modes]
 classic = false
@@ -19,6 +20,7 @@ stun_use = false
 [server]
 port = 443
 listen_addr_ipv4 = "0.0.0.0"
+inline_conntrack_control = false
 
 [server.api]
 enabled = true
