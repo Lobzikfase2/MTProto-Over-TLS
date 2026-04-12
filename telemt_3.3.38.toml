@@ -1,0 +1,86 @@
+[general]
+fast_mode = true
+use_middle_proxy = false
+log_level = "normal"
+disable_colors = true
+
+[general.modes]
+classic = false
+secure = false
+tls = true
+
+[network]
+ipv4 = true
+ipv6 = false
+prefer = 4
+multipath = false
+stun_use = false
+
+[server]
+port = 443
+listen_addr_ipv4 = "0.0.0.0"
+
+[server.api]
+enabled = true
+listen = "127.0.0.1:9095"
+whitelist = ["127.0.0.0/8"]
+minimal_runtime_enabled = true
+minimal_runtime_cache_ttl_ms = 1000
+runtime_edge_enabled = false
+read_only = true
+
+[general.links]
+show = ["users"]
+public_host = "de-1.geogame.play.dart-inter.net"
+public_port = 443
+
+[censorship]
+tls_domain = "de-1.geogame.play.dart-inter.net"
+mask = true
+unknown_sni_action = "mask"
+mask_host = "127.0.0.1"
+mask_port = 8443
+fake_cert_len = 2048
+tls_emulation = true
+tls_front_dir = "tlsfront"
+mask_shape_hardening = true
+mask_shape_hardening_aggressive_mode = false
+mask_shape_bucket_floor_bytes = 512
+mask_shape_bucket_cap_bytes = 4096
+mask_shape_above_cap_blur = false
+alpn_enforce = true
+
+[censorship.tls_fetch]
+profiles = ["modern_chrome_like", "modern_firefox_like", "compat_tls12", "legacy_minimal"]
+strict_route = true
+attempt_timeout_ms = 5000
+total_budget_ms = 15000
+grease_enabled = false
+deterministic = false
+profile_cache_ttl_secs = 600
+
+[timeouts]
+client_handshake = 30
+tg_connect = 10
+client_keepalive = 15
+client_ack = 90
+relay_idle_policy_v2_enabled = true
+relay_client_idle_soft_secs = 120
+relay_client_idle_hard_secs = 360
+relay_idle_grace_after_downstream_activity_secs = 30
+
+[access]
+replay_check_len = 65536
+replay_window_secs = 120
+ignore_time_skew = false
+
+[access.users]
+users = "7ee5e9832c7a0b7a5afe49a02e5d8aef"
+
+[[upstreams]]
+type = "direct"
+enabled = true
+weight = 10
+
+[dc_overrides]
+"203" = "91.105.192.100:443"
