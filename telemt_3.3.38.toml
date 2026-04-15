@@ -1,9 +1,56 @@
 [general]
+data_path = "/data"
 fast_mode = true
-use_middle_proxy = false
-log_level = "normal"
-disable_colors = true
+
+# Direct DC or Middle-End mode
+use_middle_proxy = true
+
+proxy_secret_path = "/data/proxy-secret"
+proxy_config_v4_cache_path = "/data/proxy-config-v4.txt"
+proxy_config_v6_cache_path = "/data/proxy-config-v6.txt"
+log_level = "silent"
+disable_colors = false
 beobachten = false
+
+
+# === Настройки размеров буферов для ускорения медиа ===
+# direct_relay_copy_buf_c2s_bytes = 131072
+# direct_relay_copy_buf_s2c_bytes = 524288
+
+direct_relay_copy_buf_c2s_bytes = 1048576
+direct_relay_copy_buf_s2c_bytes = 2097152
+crypto_pending_buffer = 1048576
+# ======================================================
+
+
+# ============= Настройки Middle-End режима ============
+middle_proxy_nat_probe = true
+stun_nat_probe_concurrency = 8
+
+middle_proxy_pool_size = 16
+middle_proxy_warm_standby = 8
+
+# Если ME временно не готов, не остаёмся мёртвыми
+me_init_retry_attempts = 0
+me2dc_fallback = true
+me2dc_fast = true
+
+me_keepalive_enabled = true
+me_keepalive_interval_secs = 25
+me_keepalive_jitter_secs = 5
+me_keepalive_payload_random = true
+
+me_warmup_stagger_enabled = true
+me_warmup_step_delay_ms = 500
+me_warmup_step_jitter_ms = 300
+# ======================================================
+
+
+upstream_connect_retry_attempts = 4
+upstream_connect_retry_backoff_ms = 250
+upstream_connect_budget_ms = 8000
+upstream_unhealthy_fail_threshold = 8
+upstream_connect_failfast_hard_errors = false
 
 [general.modes]
 classic = false
@@ -15,11 +62,23 @@ ipv4 = true
 ipv6 = false
 prefer = 4
 multipath = false
-stun_use = false
+
+stun_use = true
+stun_servers = [
+  "stun.l.google.com:19302",
+  "stun1.l.google.com:19302",
+  "stun2.l.google.com:19302"
+]
+stun_tcp_fallback = true
 
 [server]
 port = 443
 listen_addr_ipv4 = "0.0.0.0"
+
+max_connections = 4096
+accept_permit_timeout_ms = 500
+
+[server.conntrack_control]
 inline_conntrack_control = false
 
 [server.api]
@@ -32,25 +91,36 @@ runtime_edge_enabled = false
 read_only = true
 
 [general.links]
-show = ["users"]
-public_host = "de-1.geogame.play.dart-inter.net"
+show = "*"
+public_host = "__PUBLIC_HOST__"
 public_port = 443
 
 [censorship]
-tls_domain = "de-1.geogame.play.dart-inter.net"
+tls_domain = "__TLS_DOMAIN__"
 mask = true
 unknown_sni_action = "mask"
-mask_host = "127.0.0.1"
-mask_port = 8443
+mask_host = "__MASK_HOST__"
+mask_port = __MASK_PORT__
 fake_cert_len = 2048
+
 tls_emulation = true
-tls_front_dir = "tlsfront"
+tls_front_dir = "/data/tlsfront"
+
+alpn_enforce = true
+
+
+# == Дополнительные anti-DPI настройки (под вопросом) ==
 mask_shape_hardening = true
 mask_shape_hardening_aggressive_mode = false
 mask_shape_bucket_floor_bytes = 512
 mask_shape_bucket_cap_bytes = 4096
 mask_shape_above_cap_blur = false
-alpn_enforce = true
+
+mask_timing_normalization_enabled = true
+mask_timing_normalization_floor_ms = 250
+mask_timing_normalization_ceiling_ms = 700
+# ======================================================
+
 
 [censorship.tls_fetch]
 profiles = ["modern_chrome_like", "modern_firefox_like", "compat_tls12", "legacy_minimal"]
@@ -63,21 +133,21 @@ profile_cache_ttl_secs = 600
 
 [timeouts]
 client_handshake = 30
-tg_connect = 10
-client_keepalive = 15
-client_ack = 90
-relay_idle_policy_v2_enabled = true
-relay_client_idle_soft_secs = 120
-relay_client_idle_hard_secs = 360
-relay_idle_grace_after_downstream_activity_secs = 30
+tg_connect = 20
+client_keepalive = 60
+client_ack = 300
+
+# ME
+me_one_retry = 12
+me_one_timeout_ms = 1200
 
 [access]
 replay_check_len = 65536
-replay_window_secs = 120
+replay_window_secs = 1800
 ignore_time_skew = false
 
 [access.users]
-users = "7ee5e9832c7a0b7a5afe49a02e5d8aef"
+users = "__SECRET__"
 
 [[upstreams]]
 type = "direct"
