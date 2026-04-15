@@ -153,9 +153,6 @@ configure_telemt() {
         log "Активация режима Direct-DC"
         # Отключение middle proxy
         sed -i 's/use_middle_proxy = true/use_middle_proxy = false/' ./telemt_$TELEMT_VERSION.toml
-        # Раскомментировать секцию [dc_overrides] и адрес dc внутри
-        sed -i 's/^# \[dc_overrides\]/[dc_overrides]/' ./telemt_$TELEMT_VERSION.toml
-        sed -i '/^# "203" =/ s/^# //' ./telemt_$TELEMT_VERSION.toml
     fi
 
     mv ./telemt_$TELEMT_VERSION.toml ../
@@ -214,14 +211,14 @@ show_proxy_link() {
 
 
 DEFAULT_DOMAIN="geogame.play.dart-inter.net"
-DEFAULT_TELEMT_VERSION="3.0.8"
+DEFAULT_TELEMT_VERSION="3.3.38"
 
 # Локальная сборка на основе последнего релиза telemt: https://github.com/telemt/telemt -- смотрим номер версии
 _build_and_push_not_for_use() {
   local version=$1
   git clone https://github.com/An0nX/telemt-docker.git
   cd telemt-docker
-  docker build --build-arg TELEMT_REF=$version -t lobzikfase2/telemt:$version .
+  docker build --build-arg TELEMT_VERSION=$version -t lobzikfase2/telemt:$version .
   docker push lobzikfase2/telemt:$version
   rm -rf telemt-docker
 }
@@ -232,6 +229,8 @@ _build_and_push_not_for_use() {
 # sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/Lobzikfase2/MTProto-Over-TLS/refs/heads/main/update.sh)"
 # Очистить все логи:
 # sudo truncate -s 0 $(docker inspect --format='{{.LogPath}}' telemt)
+
+# docker stop telemt && sudo truncate -s 0 $(docker inspect --format='{{.LogPath}}' telemt) && docker start telemt && clear && sleep 1 && docker logs telemt
 
 main() {
     # Загружаем внешние функции
