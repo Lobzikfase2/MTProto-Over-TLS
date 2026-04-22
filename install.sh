@@ -121,6 +121,28 @@ configure_and_start_nginx() {
     sleep 1
 
     log "Выдача сертификатов"
+    sudo bash -c '
+mkdir -p /etc/nginx/default-cert/
+openssl req -x509 \
+  -out /etc/nginx/default-cert/default.crt \
+  -keyout /etc/nginx/default-cert/default.key \
+  -newkey rsa:2048 \
+  -nodes \
+  -sha256 \
+  -days 3650 \
+  -subj "/CN=localhost" \
+  -extensions EXT \
+  -config <(printf "
+[dn]
+CN=localhost
+[req]
+distinguished_name = dn
+[EXT]
+subjectAltName=DNS:localhost
+keyUsage=digitalSignature
+extendedKeyUsage=serverAuth
+")
+'
     sudo certbot --nginx \
       -d $DOMAIN \
       -d www.$DOMAIN \
@@ -227,10 +249,17 @@ _build_and_push_not_for_use() {
 # sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/Lobzikfase2/MTProto-Over-TLS/refs/heads/main/install.sh)"
 # Update:
 # sudo bash -c "$(wget -qO- https://raw.githubusercontent.com/Lobzikfase2/MTProto-Over-TLS/refs/heads/main/update.sh)"
-# Очистить все логи:
-# sudo truncate -s 0 $(docker inspect --format='{{.LogPath}}' telemt)
+# Очистить все json логи: clear_docker_logs telemt
+clear_docker_logs() {
+    sudo bash -lc '
+    CID="$1"
+    DIR=$(dirname "$(docker inspect -f "{{.LogPath}}" "$CID")")
 
-# docker stop telemt && sudo truncate -s 0 $(docker inspect --format='{{.LogPath}}' telemt) && docker start telemt && clear && sleep 1 && docker logs telemt
+    docker stop "$CID" >/dev/null && \
+    find "$DIR" -maxdepth 1 -type f -name "*-json.log*" -exec truncate -s 0 {} \; && \
+    docker start "$CID" >/dev/null
+    ' bash "$1"
+}
 
 main() {
     # Загружаем внешние функции
